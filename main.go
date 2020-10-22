@@ -6,7 +6,19 @@ import (
 	"io"
 	//"io/ioutil"
 	"os"
+	"container/list"
 )
+
+/*
+
+	This application is a designed to read a text file and replace a given target word with another.
+
+	Files are read in 1024 byte chunks so large files won't cause issues.
+
+	If a target word is starting to be identified and then the buffer is loaded with new data, the program will pickup where it left off with
+		identifing the target word.
+
+*/
 
 func Check(e error) {
 	if (e != nil) {
@@ -15,13 +27,14 @@ func Check(e error) {
 }
 
 func main() {
-	var fileName string
-	var toBeReplaced string
-	var newText string
-
+	const BUFFER_SIZE = 1024;
+	var fileName string = "test.txt"
+	var toBeReplaced string = "Ring"
+	//var newText string
+	matches := list.New()
 
 	fmt.Printf("Please enter the file name of the file to edit: ")
-	fmt.Scanln(&fileName)
+	//fmt.Scanln(&fileName)
 
 	//ReadAndPrintFile(file);
 	// Open is a wrapper OpenFile
@@ -49,31 +62,48 @@ func main() {
 		fmt.Printf("%s", string(buffer))
 	}
 
-	fmt.Printf("\nEnter the text to be replaced: ")
-	fmt.Scanln(&toBeReplaced)
+	// fmt.Printf("\nEnter the text to be replaced: ")
+	// fmt.Scanln(&toBeReplaced)
 
-	fmt.Printf("Enter the new text: ")
-	fmt.Scanln(&newText)
+	// fmt.Printf("Enter the new text: ")
+	// fmt.Scanln(&newText)
 
-	var replaceIndex int
-
-	buffer2 := make([]byte, 1024)
+	var replaceIndex uint16
+	var hasMatch bool
+	backBuffer := make([]byte, BUFFER_SIZE)		// Holds the last reading, important for matches that span buffers
+	frontBuffer := make([]byte, BUFFER_SIZE)	// Holds the most recent reading
+	offset, err := file.Seek(0, 0);
+	if err != nil || offset != 0 {
+		panic(err)
+	}
+	fmt.Printf("\n=========================================================================\n")
 	for {
-		numRead, err := file.Read(buffer2)
-
+		numRead, err := file.Read(frontBuffer)
+		
 		if err != nil && err != io.EOF {
 			panic(err)
-		}						
-
-		fmt.Printf("%d", numRead)
-		if numRead == 0 { break }
-
+		}					
+		// How many characters were read	
+		fmt.Printf("Num Read: %d\n", numRead)
+		
+		if numRead == 0 { break }	
+		
+		
 		for i := 0; i < numRead; i++ {
-			fmt.Printf("for loop iterated\n")
-			if buffer2[i] == byte(toBeReplaced[replaceIndex]) {
-				fmt.Printf("Found a match\n")
-				if replaceIndex == len(toBeReplaced) {
-					fmt.Printf("Found word to be replaced!\n")
+			//fmt.Printf("%x ", frontBuffer[i])
+			// If a character matches a byte we need to prepare to test the next character in the buffer against the next character in the toBeReplaced string
+			if frontBuffer[i] == byte(toBeReplaced[replaceIndex]) {
+				// Printing the matching character and its index value
+				fmt.Printf("Character: %c | Index in file: %d\n", frontBuffer[i], i)
+				// If the replace index matches the toBeReplaced string length we have a complete match
+				if (replaceIndex + 1) == uint16(len(toBeReplaced)) {
+					// Print the characters for now
+					fmt.Printf("Complete Match Made\n\n")
+					// Updating state variable about a match being found
+					hasMatch = true
+					// Adding the replaceIndex which contains the index of the first character
+					// The current replaceIndex contains the last index value of the matching
+					matches.PushBack(replaceIndex - (uint16(len(toBeReplaced)) - 1))
 				} else {
 					replaceIndex++
 				}				
@@ -81,25 +111,19 @@ func main() {
 				replaceIndex = 0
 			}
 		}
+
+		// A match was made so we want to replace the correct text as we write it to file
+		// We cannot write to the buffer because we will not have room to replace small words with larger ones without overwriting pre-existing text
+		if hasMatch {
+			// Iterate through matches
+			for e := matches.Front(); e != nil; e = e.Next() {
+				
+			}
+		} else {
+			// Write the frontBuffer directly to a new file
+		}
+		// Move the contents of the front 
+		backBuffer = frontBuffer
 	}
-
-
-
-	// Create a buffer of 1024 bytes
-	// buffer := make([]byte, 1024)
-	// for {
-	// 	// read a chunk
-	// 	numRead, err := file.Read(buffer)
-	// 	if err != nil && err != io.EOF {
-	// 		panic(err)
-	// 	}
-	// 	// If nothing was read from the file then break from loop
-	// 	if numRead == 0 {
-	// 		break
-	// 	}
-
-	// 	if _, err := 
-	// }
-
-
+	fmt.Printf("=========================================================================\n\n")	
 }
