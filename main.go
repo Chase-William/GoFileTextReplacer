@@ -6,7 +6,6 @@ import (
 	"io"
 	//"io/ioutil"
 	"os"
-	"container/list"
 )
 
 /*
@@ -21,24 +20,25 @@ import (
 */
 
 func Check(e error) {
-	if (e != nil) {
+	if e != nil {
 		panic(e)
 	}
 }
 
 func main() {
-	const BUFFER_SIZE = 1024;
+	const BUFFER_SIZE = 1024
 	var fileName string = "test.txt"
 	var toBeReplaced string = "Ring"
 	//var newText string
-	matches := list.New()
+	//matches := list.New()
+	matches := []int
 
 	fmt.Printf("Please enter the file name of the file to edit: ")
 	//fmt.Scanln(&fileName)
 
 	//ReadAndPrintFile(file);
 	// Open is a wrapper OpenFile
-	file, err := os.OpenFile(fileName, os.O_RDWR | os.O_APPEND, 0660)
+	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_APPEND, 0660)
 	Check(err)
 
 	// This function is called when the program is returning from this method
@@ -52,12 +52,14 @@ func main() {
 	buffer := make([]byte, 1024)
 	for {
 		numRead, err := file.Read(buffer)
-		
+
 		if err != nil && err != io.EOF {
 			panic(err)
 		}
 
-		if numRead == 0 { break }
+		if numRead == 0 {
+			break
+		}
 
 		fmt.Printf("%s", string(buffer))
 	}
@@ -70,25 +72,32 @@ func main() {
 
 	var replaceIndex uint16
 	var hasMatch bool
-	backBuffer := make([]byte, BUFFER_SIZE)		// Holds the last reading, important for matches that span buffers
-	frontBuffer := make([]byte, BUFFER_SIZE)	// Holds the most recent reading
-	offset, err := file.Seek(0, 0);
+	//backBuffer := make([]byte, BUFFER_SIZE)		// Holds the last reading, important for matches that span buffers
+	frontBuffer := make([]byte, BUFFER_SIZE) // Holds the most recent reading
+	offset, err := file.Seek(0, 0)
 	if err != nil || offset != 0 {
 		panic(err)
 	}
 	fmt.Printf("\n=========================================================================\n")
+
+	// Creating the output file
+	//oFile, err := os.Create("TestOutput.txt")
+	//Check(err)
+	//defer oFile.Close() // Close when leaving the scope of this function
+
 	for {
 		numRead, err := file.Read(frontBuffer)
-		
+
 		if err != nil && err != io.EOF {
 			panic(err)
-		}					
-		// How many characters were read	
+		}
+		// How many characters were read
 		fmt.Printf("Num Read: %d\n", numRead)
-		
-		if numRead == 0 { break }	
-		
-		
+
+		if numRead == 0 {
+			break
+		}
+
 		for i := 0; i < numRead; i++ {
 			//fmt.Printf("%x ", frontBuffer[i])
 			// If a character matches a byte we need to prepare to test the next character in the buffer against the next character in the toBeReplaced string
@@ -103,10 +112,10 @@ func main() {
 					hasMatch = true
 					// Adding the replaceIndex which contains the index of the first character
 					// The current replaceIndex contains the last index value of the matching
-					matches.PushBack(replaceIndex - (uint16(len(toBeReplaced)) - 1))
+					matches.(replaceIndex - (uint16(len(toBeReplaced)) - 1))
 				} else {
 					replaceIndex++
-				}				
+				}
 			} else {
 				replaceIndex = 0
 			}
@@ -115,15 +124,19 @@ func main() {
 		// A match was made so we want to replace the correct text as we write it to file
 		// We cannot write to the buffer because we will not have room to replace small words with larger ones without overwriting pre-existing text
 		if hasMatch {
+
 			// Iterate through matches
 			for e := matches.Front(); e != nil; e = e.Next() {
-				
+				test := e.Value.(uint16)
+				fmt.Printf("Replace Starting Index:%2d\n", test)
+				matches.Remove(e) // Remove this element
+				//oFile.WriteString(frontBuffer[:e.Value(uint16).])
 			}
 		} else {
 			// Write the frontBuffer directly to a new file
 		}
-		// Move the contents of the front 
-		backBuffer = frontBuffer
+		// Move the contents of the front
+		//backBuffer = frontBuffer
 	}
-	fmt.Printf("=========================================================================\n\n")	
+	fmt.Printf("=========================================================================\n\n")
 }
