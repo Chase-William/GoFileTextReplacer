@@ -4,6 +4,7 @@ import (
 	//"bufio"
 	"fmt"
 	"io"
+
 	//"io/ioutil"
 	"os"
 )
@@ -31,7 +32,7 @@ func main() {
 	var toBeReplaced string = "Ring"
 	//var newText string
 	//matches := list.New()
-	matches := []int
+	matches := []int{}
 
 	fmt.Printf("Please enter the file name of the file to edit: ")
 	//fmt.Scanln(&fileName)
@@ -70,7 +71,7 @@ func main() {
 	// fmt.Printf("Enter the new text: ")
 	// fmt.Scanln(&newText)
 
-	var replaceIndex uint16
+	var replaceIndex int
 	var hasMatch bool
 	//backBuffer := make([]byte, BUFFER_SIZE)		// Holds the last reading, important for matches that span buffers
 	frontBuffer := make([]byte, BUFFER_SIZE) // Holds the most recent reading
@@ -105,14 +106,14 @@ func main() {
 				// Printing the matching character and its index value
 				fmt.Printf("Character: %c | Index in file: %d\n", frontBuffer[i], i)
 				// If the replace index matches the toBeReplaced string length we have a complete match
-				if (replaceIndex + 1) == uint16(len(toBeReplaced)) {
+				if (replaceIndex + 1) == len(toBeReplaced) {
 					// Print the characters for now
 					fmt.Printf("Complete Match Made\n\n")
 					// Updating state variable about a match being found
 					hasMatch = true
 					// Adding the replaceIndex which contains the index of the first character
 					// The current replaceIndex contains the last index value of the matching
-					matches.(replaceIndex - (uint16(len(toBeReplaced)) - 1))
+					matches = append(matches, i-len(toBeReplaced))
 				} else {
 					replaceIndex++
 				}
@@ -121,22 +122,25 @@ func main() {
 			}
 		}
 
+		fmt.Printf("%s\n", frontBuffer)
+
 		// A match was made so we want to replace the correct text as we write it to file
 		// We cannot write to the buffer because we will not have room to replace small words with larger ones without overwriting pre-existing text
 		if hasMatch {
-
-			// Iterate through matches
-			for e := matches.Front(); e != nil; e = e.Next() {
-				test := e.Value.(uint16)
-				fmt.Printf("Replace Starting Index:%2d\n", test)
-				matches.Remove(e) // Remove this element
+			// Iterate through all matches
+			for i, v := range matches {
+				fmt.Printf("Replace Starting Index:%2d\n", v)
+				fmt.Printf("Current Index:%2d\n", i)
+				fmt.Printf("To Be Written: %s\n\n", (frontBuffer[:v]))
+				//matches.Remove(e) // Remove this element
 				//oFile.WriteString(frontBuffer[:e.Value(uint16).])
 			}
 		} else {
 			// Write the frontBuffer directly to a new file
 		}
 		// Move the contents of the front
-		//backBuffer = frontBuffer
+		// backBuffer = frontBuffer
+
+		fmt.Printf("=========================================================================\n\n")
 	}
-	fmt.Printf("=========================================================================\n\n")
 }
