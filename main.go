@@ -24,15 +24,15 @@ func Check(e error) {
 }
 
 func main() {
-	const BUFFER_SIZE = 1024 // length of byte buffer
-	var fileName string      // fileName given by the user
-	var toBeReplaced string  // string given by the user to be replaced
-	var newText string       // string to replace the toBeReplaced string
+	const BUFFER_SIZE = 1024         // length of byte buffer
+	var fileName string = "test.txt" // fileName given by the user
+	var toBeReplaced string = "is"   // string given by the user to be replaced
+	var newText string = "REPLACED"  // string to replace the toBeReplaced string
 	matches := []int{}
 
 	// Get filename
-	fmt.Printf("Please enter the file name of the file to edit: ")
-	fmt.Scanln(&fileName)
+	//fmt.Printf("Please enter the file name of the file to edit: ")
+	//fmt.Scanln(&fileName)
 
 	// Open is a wrapper OpenFile
 	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_APPEND, 0660)
@@ -61,11 +61,11 @@ func main() {
 		//fmt.Printf("%s", string(buffer))
 	}
 
-	fmt.Printf("Enter the text to be replaced: ")
-	fmt.Scanln(&toBeReplaced)
+	// fmt.Printf("Enter the text to be replaced: ")
+	// fmt.Scanln(&toBeReplaced)
 
-	fmt.Printf("Enter the new text: ")
-	fmt.Scanln(&newText)
+	// fmt.Printf("Enter the new text: ")
+	// fmt.Scanln(&newText)
 
 	//backBuffer := make([]byte, BUFFER_SIZE)		// Holds the last reading, important for matches that span buffers
 	frontBuffer := make([]byte, BUFFER_SIZE) // Holds the most recent reading
@@ -96,6 +96,12 @@ func main() {
 		for i := 0; i < numRead; i++ {
 			// If a character matches a byte we need to prepare to test the next character in the buffer against the next character in the toBeReplaced string
 			if frontBuffer[i] == byte(toBeReplaced[replaceIndex]) {
+				if i-1 != 0 { // Make sure we arn't indexing into -1 <-----------------	NEED TO CHECK TRAILING AS WELL
+					if string(frontBuffer[i-1]) != " " && replaceIndex == 0 { // When evaluating the first character of the word, the previous character must be a white space
+						fmt.Printf("%s", string(frontBuffer[i-1]))
+						continue
+					}
+				}
 				// Printing the matching character and its index value
 				//fmt.Printf("Character: %c | Index in file: %d\n", frontBuffer[i], i)
 				// If the replace index matches the toBeReplaced string length we have a complete match
@@ -129,12 +135,36 @@ func main() {
 				oFile.WriteString(string(frontBuffer[:v+1]) + newText)
 				//fmt.Printf("Write: %s%s\n\n", (frontBuffer[:v+1]), newText)
 			} else {
+				fmt.Printf("\n%d\n", i)
 				// Creating a string from a []byte slice that contains our the text before and then our keyword
 				oFile.WriteString(string(frontBuffer[matches[i-1]+len(toBeReplaced)+1:v+1]) + newText)
 				//fmt.Printf("Write: %s%s\n\n", newText, (frontBuffer[matches[i-1]+len(toBeReplaced)+1 : v+1]))
 			}
+
+			// If this is the final iteration, check to make sure no more content needs to be written
+			if i == len(matches)-1 {
+				fmt.Printf("\n\n\nRan\n\n\n")
+				remaining := frontBuffer[v+len(toBeReplaced)+1:] // <------------------- CURRENTLY WRITES ENTIRE FRONTBUFFER TRAILING CONTENT
+				// If the slice is not empty, write it
+				if remaining != nil {
+					oFile.WriteString(string(remaining))
+				}
+			}
+
+			fmt.Printf("Remaining in buffer: %s\n", frontBuffer[v:])
 		}
+
+		fmt.Printf("Matches Contents Indices: %v\n", matches)
+		fmt.Printf("Matches Length: %d\n", len(matches))
+		PrintMatches(frontBuffer, matches)
 
 		fmt.Printf("Finished!")
 	}
+}
+
+func PrintMatches(buf []byte, matches []int) {
+	for _, v := range matches {
+		fmt.Printf("%s  ", string(buf[v:v+5]))
+	}
+	fmt.Printf("\n")
 }
