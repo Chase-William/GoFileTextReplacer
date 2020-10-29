@@ -30,7 +30,7 @@ func main() {
 	const BUFFER_SIZE = 1024
 	var fileName string = "test.txt"
 	var toBeReplaced string = "Ring"
-	//var newText string
+	var newText string = "Necklace"
 	//matches := list.New()
 	matches := []int{}
 
@@ -82,9 +82,9 @@ func main() {
 	fmt.Printf("\n=========================================================================\n")
 
 	// Creating the output file
-	//oFile, err := os.Create("TestOutput.txt")
-	//Check(err)
-	//defer oFile.Close() // Close when leaving the scope of this function
+	oFile, err := os.Create("TestOutput.txt")
+	Check(err)
+	defer oFile.Close() // Close when leaving the scope of this function
 
 	for {
 		numRead, err := file.Read(frontBuffer)
@@ -128,12 +128,22 @@ func main() {
 		// We cannot write to the buffer because we will not have room to replace small words with larger ones without overwriting pre-existing text
 		if hasMatch {
 			// Iterate through all matches
+
+			/*
+				Reading by filling in from previous match
+			*/
 			for i, v := range matches {
 				fmt.Printf("Replace Starting Index:%2d\n", v)
 				fmt.Printf("Current Index:%2d\n", i)
-				fmt.Printf("To Be Written: %s\n\n", (frontBuffer[:v]))
-				//matches.Remove(e) // Remove this element
-				//oFile.WriteString(frontBuffer[:e.Value(uint16).])
+				if i == 0 {
+					// Write the target area using a slice to file
+					oFile.WriteString(string(frontBuffer[:v+1]) + newText)
+					fmt.Printf("Write: %s%s\n\n", (frontBuffer[:v+1]), newText)
+				} else {
+					// Creating a string from a []byte slice that contains our the text before and then our keyword
+					oFile.WriteString(string(frontBuffer[matches[i-1]+len(toBeReplaced)+1:v+1]) + newText)
+					fmt.Printf("Write: %s%s\n\n", newText, (frontBuffer[matches[i-1]+len(toBeReplaced)+1 : v+1]))
+				}
 			}
 		} else {
 			// Write the frontBuffer directly to a new file
