@@ -15,6 +15,12 @@ import (
 	If a target word is starting to be identified and then the buffer is loaded with new data, the program will pickup where it left off with
 		identifing the target word.
 
+	Caveats:
+
+	The text to be replaced must be a single word and cannot contain spaces.
+
+	The text to be replaced with must be a single word and connot contain spaces.
+
 */
 
 func Check(e error) {
@@ -24,15 +30,15 @@ func Check(e error) {
 }
 
 func main() {
-	const BUFFER_SIZE = 1024         // length of byte buffer
-	var fileName string = "test.txt" // fileName given by the user
-	var toBeReplaced string = "is"   // string given by the user to be replaced
-	var newText string = "REPLACED"  // string to replace the toBeReplaced string
+	const BUFFER_SIZE = 1024 // length of byte buffer
+	var fileName string      // fileName given by the user
+	var toBeReplaced string  // string given by the user to be replaced
+	var newText string       // string to replace the toBeReplaced string
 	matches := []int{}
 
 	// Get filename
-	//fmt.Printf("Please enter the file name of the file to edit: ")
-	//fmt.Scanln(&fileName)
+	fmt.Printf("Please enter the file name of the file to edit: ")
+	fmt.Scanln(&fileName)
 
 	// Open is a wrapper OpenFile
 	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_APPEND, 0660)
@@ -57,15 +63,13 @@ func main() {
 		if numRead == 0 {
 			break
 		}
-
-		//fmt.Printf("%s", string(buffer))
 	}
 
-	// fmt.Printf("Enter the text to be replaced: ")
-	// fmt.Scanln(&toBeReplaced)
+	fmt.Printf("Enter the text to be replaced: ")
+	fmt.Scanln(&toBeReplaced)
 
-	// fmt.Printf("Enter the new text: ")
-	// fmt.Scanln(&newText)
+	fmt.Printf("Enter the new text: ")
+	fmt.Scanln(&newText)
 
 	charBuffer := make([]byte, BUFFER_SIZE) // Holds the most recent reading
 	offset, err := file.Seek(0, 0)
