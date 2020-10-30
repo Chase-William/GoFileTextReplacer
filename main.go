@@ -15,6 +15,12 @@ import (
 	If a target word is starting to be identified and then the buffer is loaded with new data, the program will pickup where it left off with
 		identifing the target word.
 
+	Caveats:
+
+	The text to be replaced must be a single word and cannot contain spaces.
+
+	The text to be replaced with must be a single word and connot contain spaces.
+
 */
 
 func Check(e error) {
@@ -57,8 +63,6 @@ func main() {
 		if numRead == 0 {
 			break
 		}
-
-		//fmt.Printf("%s", string(buffer))
 	}
 
 	fmt.Printf("Enter the text to be replaced: ")
@@ -67,8 +71,7 @@ func main() {
 	fmt.Printf("Enter the new text: ")
 	fmt.Scanln(&newText)
 
-	//backBuffer := make([]byte, BUFFER_SIZE)		// Holds the last reading, important for matches that span buffers
-	frontBuffer := make([]byte, BUFFER_SIZE) // Holds the most recent reading
+	charBuffer := make([]byte, BUFFER_SIZE) // Holds the most recent reading
 	offset, err := file.Seek(0, 0)
 	if err != nil || offset != 0 {
 		panic(err)
@@ -81,7 +84,7 @@ func main() {
 
 	var replaceIndex int // Used to store the index when iterating for a target word
 	for {
-		numRead, err := file.Read(frontBuffer)
+		numRead, err := file.Read(charBuffer)
 
 		if err != nil && err != io.EOF {
 			panic(err)
@@ -92,18 +95,19 @@ func main() {
 			break
 		}
 
+		fmt.Printf("Read chunk from file, read characters: %d\n", numRead)
+
 		// Iterating through the buffer just read and adding matches to our collection of matches
 		for i := 0; i < numRead; i++ {
 			// If a character matches a byte we need to prepare to test the next character in the buffer against the next character in the toBeReplaced string
-			if frontBuffer[i] == byte(toBeReplaced[replaceIndex]) {
-				// Printing the matching character and its index value
-				//fmt.Printf("Character: %c | Index in file: %d\n", frontBuffer[i], i)
+			if charBuffer[i] == byte(toBeReplaced[replaceIndex]) {
+				if i-1 != 0 { // Make sure we arn't indexing into -1
+					if string(charBuffer[i-1]) != " " && replaceIndex == 0 { // When evaluating the first character of the word, the previous character must be a white space
+						continue
+					}
+				}
 				// If the replace index matches the toBeReplaced string length we have a complete match
 				if (replaceIndex + 1) == len(toBeReplaced) {
-					// Print the characters for now
-					//fmt.Printf("Complete Match Made\n\n")
-					// Updating state variable about a match being found
-					//hasMatch = true
 					// Adding the replaceIndex which contains the index of the first character
 					// The current replaceIndex contains the last index value of the matching
 					matches = append(matches, i-len(toBeReplaced))
@@ -122,19 +126,35 @@ func main() {
 			Iterate through all matches
 		*/
 		for i, v := range matches {
-			//fmt.Printf("Replace Starting Index:%2d\n", v)
-			//fmt.Printf("Current Index:%2d\n", i)
 			if i == 0 {
 				// Write the target area using a slice to file
-				oFile.WriteString(string(frontBuffer[:v+1]) + newText)
-				//fmt.Printf("Write: %s%s\n\n", (frontBuffer[:v+1]), newText)
+				oFile.WriteString(string(charBuffer[:v+1]) + newText)
 			} else {
+				if matches[i-1] > v {
+					continue
+				}
 				// Creating a string from a []byte slice that contains our the text before and then our keyword
-				oFile.WriteString(string(frontBuffer[matches[i-1]+len(toBeReplaced)+1:v+1]) + newText)
-				//fmt.Printf("Write: %s%s\n\n", newText, (frontBuffer[matches[i-1]+len(toBeReplaced)+1 : v+1]))
+				oFile.WriteString(string(charBuffer[matches[i-1]+len(toBeReplaced)+1:v+1]) + newText)
+			}
+
+			// If this is the final iteration, check to make sure no more content needs to be written
+			if i == len(matches)-1 {
+				remaining := charBuffer[v+len(toBeReplaced)+1 : numRead] // Write from the end index of the last word to be replaced to the index of the last read index
+				// If the slice is not empty, write it
+				if remaining != nil {
+					oFile.WriteString(string(remaining))
+				}
+				matches = matches[i+1:] // Slicing the array to be scoped on the new part
 			}
 		}
-
-		fmt.Printf("Finished!")
 	}
+
+	fmt.Printf("Finished Successfully!")
+}
+
+func PrintMatches(buf *[]byte, matches []int) {
+	for _, v := range matches {
+		fmt.Printf("%s  ", string((*buf)[v:v+5]))
+	}
+	fmt.Printf("\n")
 }
