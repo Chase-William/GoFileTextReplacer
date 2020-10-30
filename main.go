@@ -73,7 +73,6 @@ func main() {
 	if err != nil || offset != 0 {
 		panic(err)
 	}
-
 	// Creating the output file
 	oFile, err := os.Create("TestOutput.txt")
 	Check(err)
@@ -144,7 +143,7 @@ func main() {
 			// If this is the final iteration, check to make sure no more content needs to be written
 			if i == len(matches)-1 {
 				fmt.Printf("\n\n\nRan\n\n\n")
-				remaining := frontBuffer[v+len(toBeReplaced)+1:] // <------------------- CURRENTLY WRITES ENTIRE FRONTBUFFER TRAILING CONTENT
+				remaining := frontBuffer[v+len(toBeReplaced)+1 : numRead] // Write from the end index of the last word to be replaced to the index of the last read index
 				// If the slice is not empty, write it
 				if remaining != nil {
 					oFile.WriteString(string(remaining))
